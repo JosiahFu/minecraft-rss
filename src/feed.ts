@@ -25,6 +25,33 @@ interface VersionManifest {
     }[]
 }
 
+interface Tile {
+    sub_header: string;
+    image: {
+        content_type: 'image';
+        imageURL: string;
+        alt: string;
+    };
+    tile_size: `${number}x${number}`;
+    title: string;
+}
+
+interface Article {
+    default_tile: Tile;
+    preferred_tile?: Tile;
+    articleLang: 'en-us';
+    primary_category: string;
+    categories: string[];
+    article_url: string;
+    publish_date: string;
+    tags: string[];
+}
+
+interface Articles {
+    article_count: number;
+    article_grid: Article[]
+}
+
 type VersionData = {
     type: 'release' | 'snapshot';
     id: string;
@@ -55,32 +82,30 @@ function extractType(id: string, type: VersionType): VersionData {
     return {type: 'snapshot', id};
 }
 
-const articleRoot = 'https://www.minecraft.net/en-us/article/'
-async function findArticle(data: VersionData): Promise<string | undefined> {
+const articleRoot = '/en-us/article/'
+function findArticle(data: VersionData, articles: Article[]): Article | undefined {
     switch(data.type) {
         case 'release':
         case 'snapshot':
-            return `${articleRoot}minecraft-${data.type === 'release' ? 'java-edition' : 'snapshot'}-${data.id.replaceAll('.', '-')}`;
+            return articles.find(({article_url}) => article_url === `${articleRoot}minecraft-${data.type === 'release' ? 'java-edition' : 'snapshot'}-${data.id.replaceAll('.', '-')}`);
 
         case 'pre':
         case 'rc':
             console.warn(`Trying to find article for ${data.release}-${data.type}${data.number}`)
 
             let number = data.number;
-            let link;
+            let link: string;
             
             while (number > 0) {
                 link = `${articleRoot}minecraft-${data.release.replaceAll('.', '-')}-${data.type === 'pre' ? 'pre-release' : 'release-candidate'}-${number}`;
                 
                 console.warn(`Trying ${link}`)
                 
-                const result = await fetch(link, {headers: {
-                    'User-Agent': USER_AGENT,
-                }});
-                
-                if (result.ok) {
+                const result = articles.find(({article_url}) => article_url === link);
+
+                if (result !== undefined) {
                     console.warn(`Found ${link}`);
-                    return link;
+                    return result;
                 }
                 
                 number--;
@@ -88,6 +113,10 @@ async function findArticle(data: VersionData): Promise<string | undefined> {
             
             return undefined;
     }
+}
+
+function fixOrigin(relativeURI: string): string {
+    return `https://minecraft.net${relativeURI}`
 }
 
 export async function generateRss() {
@@ -98,6 +127,12 @@ export async function generateRss() {
     console.warn('Fetched version manifest')
 
     const recent = versionManifest.versions.slice(0, RECENT_COUNT);
+    
+    console.warn('Fetching all articles...')
+
+    const {article_grid: articles}: Articles = await (await fetch('https://www.minecraft.net/content/minecraft-net/_jcr_content.articles.grid/content/minecraft-net/_jcr_content.articles.grid?pageSize=2000&tagsPath=minecraft:stockholm/news', {headers: {'User-Agent': USER_AGENT}})).json()
+
+    console.warn('Fetched all articles');
 
     const feed = new Feed({
         copyright: 'Public Domain',
@@ -108,13 +143,16 @@ export async function generateRss() {
     })
 
     for (let {id, type, releaseTime} of recent) {
-        const article = await findArticle(extractType(id, type));
+        const article = findArticle(extractType(id, type), articles);
+        
+        const url = article && fixOrigin(article.article_url);
         
         feed.addItem({
             date: new Date(releaseTime),
-            link: article ?? '',
+            link: url ?? '',
             title: id,
-            id: article,
+            id: url,
+            image: article && fixOrigin((article.preferred_tile ?? article.default_tile).image.imageURL),
         })
     }
 

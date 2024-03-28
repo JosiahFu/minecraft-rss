@@ -3,6 +3,7 @@
     "feed": "^4.2.2"
   },
   "devDependencies": {
+    "@types/node": "^20.11.30",
     "typescript": "^5.4.3"
   },
   "name": "minecraft-rss",

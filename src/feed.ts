@@ -146,13 +146,14 @@ export async function generateRss() {
         const article = findArticle(extractType(id, type), articles);
         
         const url = article && fixOrigin(article.article_url);
+        const tile = article?.preferred_tile ?? article?.default_tile
         
         feed.addItem({
             date: new Date(releaseTime),
             link: url ?? '',
-            title: id,
+            title: tile?.title ?? id,
             id: url,
-            image: article && fixOrigin((article.preferred_tile ?? article.default_tile).image.imageURL),
+            image: tile && fixOrigin(tile.image.imageURL),
         })
     }
 

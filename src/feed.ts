@@ -91,7 +91,7 @@ function findArticle(data: VersionData, articles: Article[]): Article | undefine
 
         case 'pre':
         case 'rc':
-            console.warn(`Trying to find article for ${data.release}-${data.type}${data.number}`)
+            console.log(`Trying to find article for ${data.release}-${data.type}${data.number}`)
 
             let number = data.number;
             let link: string;
@@ -99,12 +99,12 @@ function findArticle(data: VersionData, articles: Article[]): Article | undefine
             while (number > 0) {
                 link = `${articleRoot}minecraft-${data.release.replaceAll('.', '-')}-${data.type === 'pre' ? 'pre-release' : 'release-candidate'}-${number}`;
                 
-                console.warn(`Trying ${link}`)
+                console.log(`Trying ${link}`)
                 
                 const result = articles.find(({article_url}) => article_url === link);
 
                 if (result !== undefined) {
-                    console.warn(`Found ${link}`);
+                    console.log(`Found ${link}`);
                     return result;
                 }
                 
@@ -120,19 +120,19 @@ function fixOrigin(relativeURI: string): string {
 }
 
 export async function generateRss() {
-    console.warn('Fetching version manifest...')
+    console.log('Fetching version manifest...')
 
     const versionManifest: VersionManifest = await (await fetch('https://piston-meta.mojang.com/mc/game/version_manifest.json')).json()
 
-    console.warn('Fetched version manifest')
+    console.log('Fetched version manifest')
 
     const recent = versionManifest.versions.slice(0, RECENT_COUNT);
     
-    console.warn('Fetching all articles...')
+    console.log('Fetching all articles...')
 
     const {article_grid: articles}: Articles = await (await fetch('https://www.minecraft.net/content/minecraft-net/_jcr_content.articles.grid/content/minecraft-net/_jcr_content.articles.grid?pageSize=2000&tagsPath=minecraft:stockholm/news', {headers: {'User-Agent': USER_AGENT}})).json()
 
-    console.warn('Fetched all articles');
+    console.log('Fetched all articles');
 
     const feed = new Feed({
         copyright: 'Public Domain',
@@ -156,7 +156,7 @@ export async function generateRss() {
         })
     }
 
-    console.warn('All versions added')
+    console.log('All versions added')
 
     return feed;
 }

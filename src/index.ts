@@ -13,8 +13,8 @@ try {
 
 async function updateFeed() {
     const feed = await generateRss();
-    fs.writeFile('static/feed.atom', feed.atom1(), () => {})
-    fs.writeFile('static/feed.rss', feed.rss2(), () => {})
+    fs.writeFileSync('static/feed.atom', feed.atom1())
+    fs.writeFileSync('static/feed.rss', feed.rss2())
 }
 
 await updateFeed();

@@ -18,7 +18,7 @@ async function updateFeed() {
 }
 
 await updateFeed();
-const timeout = setTimeout(updateFeed, 15 * 60 * 1000);
+const interval = setInterval(updateFeed, 15 * 60 * 1000);
 
 const server = polka()
     .use(sirv('static'))
@@ -31,7 +31,7 @@ const server = polka()
 const handleExit = () => {
     console.log('\n> Closing server!')
 
-    clearTimeout(timeout);
+    clearInterval(interval);
     server.server?.close();
 }
 
